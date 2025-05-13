@@ -6,25 +6,30 @@ import Link from 'next/link'
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
-  const clerk = useClerk(); // ✅ move this hook to the top level
+  const clerk = useClerk();
 
   const [userType, setUserType] = useState<string>('Rider');
   const [homeLocation, setHomeLocation] = useState<string>('');
   const [birthday, setBirthday] = useState<string>('');
-  const [VehicalType,setVehicalType] = useState<string>('BIKE');
+  const [vehicleType, setVehicleType] = useState<string>('BIKE');
+  const [vehicleNumber, setVehicleNumber] = useState<string>('');
+  const [vehicleNumberError, setVehicleNumberError] = useState<string>('');
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user) return
   
       try {
-        const res = await fetch(`/api/user/get?clerkId=${user.id}`) // assumes GET route
+        const res = await fetch(`/api/user/get?clerkId=${user.id}`)
         if (!res.ok) throw new Error('Failed to fetch user data')
         
         const data = await res.json()
         if (data.user) {
-          setUserType(data.user.role.charAt(0).toUpperCase() + data.user.role.slice(1)) // e.g., "rider" → "Rider"
+          setUserType(data.user.role.charAt(0).toUpperCase() + data.user.role.slice(1))
           setHomeLocation(data.user.homeLocation || '')
           setBirthday(data.user.birthday || '')
+          setVehicleType(data.user.vehicleType || 'BIKE')
+          setVehicleNumber(data.user.vehicleNumber || '')
         }
       } catch (error) {
         console.error('Error fetching user data:', error)
@@ -33,9 +38,23 @@ export default function ProfilePage() {
   
     fetchUserData()
   }, [user])
-  
+
+  const validateVehicleNumber = (number: string): boolean => {
+    // Basic Indian vehicle number validation (e.g., TN01AB1234)
+    const regex = /^[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{1,4}$/;
+    return regex.test(number);
+  };
+
   const handleSaveChanges = async () => {
     if (!user) return;
+
+    // Validate vehicle number if user is a driver
+    if (userType === 'Driver' && vehicleNumber && !validateVehicleNumber(vehicleNumber)) {
+      setVehicleNumberError('Please enter a valid vehicle number (e.g., TN01AB1234)');
+      return;
+    } else {
+      setVehicleNumberError('');
+    }
 
     try {
       await clerk.user?.update({
@@ -43,6 +62,10 @@ export default function ProfilePage() {
           userType,
           homeLocation,
           birthday,
+          ...(userType === 'Driver' && {
+            vehicleType,
+            vehicleNumber
+          })
         },
       });
 
@@ -51,10 +74,13 @@ export default function ProfilePage() {
         name: user.fullName,
         email: user.primaryEmailAddress?.emailAddress,
         phone: user.phoneNumbers?.[0]?.phoneNumber || '',
-        role: userType,
+        role: userType.toLowerCase(),
         homeLocation,
         birthday,
-        
+        ...(userType === 'Driver' && {
+          vehicleType,
+          vehicleNumber
+        })
       };
 
       const res = await fetch('/api/user', {
@@ -74,7 +100,6 @@ export default function ProfilePage() {
     }
   };
 
-  // ... rest of your component
   if (!isLoaded || !user) return <div>Loading...</div>
 
   return (
@@ -82,10 +107,10 @@ export default function ProfilePage() {
       <aside className="sidebar w-1/4 bg-gray-800 p-4 min-h-screen">
         <h2 className="text-xl font-bold mb-4">Welcome, {user.firstName || 'Rider'}!</h2>
         <ul className="space-y-2">
-          <li><Link href="/home" className="hover:underline">Home</Link></li>
+          {/* <li><Link href="/home" className="hover:underline">Home</Link></li>
           <li><Link href="#">Ride History</Link></li>
           <li><Link href="/profile" className="font-semibold underline">Profile</Link></li>
-          <li><Link href="#">Settings</Link></li>
+          <li><Link href="#">Settings</Link></li> */}
         </ul>
       </aside>
 
@@ -145,6 +170,42 @@ export default function ProfilePage() {
               className="w-full bg-gray-800 p-2 rounded text-white border border-gray-600"
             />
           </div>
+
+          {userType === 'Driver' && (
+            <>
+              <div>
+                <label className="block font-medium mb-1">Vehicle Type:</label>
+                <select
+                  value={vehicleType}
+                  onChange={(e) => setVehicleType(e.target.value)}
+                  className="w-full bg-gray-800 p-2 rounded text-white border border-gray-600"
+                >
+                  <option value="BIKE">Bike</option>
+                  <option value="AUTO">Auto</option>
+                  <option value="CAR">Car</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-medium mb-1">Vehicle Number:</label>
+                <input
+                  type="text"
+                  value={vehicleNumber}
+                  onChange={(e) => {
+                    setVehicleNumber(e.target.value);
+                    setVehicleNumberError('');
+                  }}
+                  placeholder="e.g., TN01AB1234"
+                  className={`w-full bg-gray-800 p-2 rounded text-white border ${
+                    vehicleNumberError ? 'border-red-500' : 'border-gray-600'
+                  }`}
+                />
+                {vehicleNumberError && (
+                  <p className="text-red-500 text-sm mt-1">{vehicleNumberError}</p>
+                )}
+              </div>
+            </>
+          )}
 
           <button
             onClick={handleSaveChanges}

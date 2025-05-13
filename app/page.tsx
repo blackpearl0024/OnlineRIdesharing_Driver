@@ -271,6 +271,7 @@ useEffect(() => {
             riderLocationsrc={riderLocationsrc}
             riderLocationdst={riderLocationdst}
             rideAccepted={rideAccepted}
+            setRideAccepted={setRideAccepted}
             
           />
         </div>

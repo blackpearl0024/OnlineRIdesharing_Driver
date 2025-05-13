@@ -16,9 +16,9 @@ export default function Home() {
         <h2>Welcome, Rider!</h2>
         <ul>
           <li><a href="#">Home</a></li>
-          <li><a href="#">Ride History</a></li>
+          <li><a href="/history">Ride History</a></li>
           <li><a href="/profile">Profile</a></li>
-          <li><a href="#">Settings</a></li>
+         
          
           
         </ul>

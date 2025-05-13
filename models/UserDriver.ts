@@ -22,7 +22,7 @@ const UserSchema = new Schema<IUser>({
   role: { type: String, enum: ["rider", "driver"], required: true },
   homeLocation: String,
   birthday: String,
-  vehicleType: { type: String, default: 'Bike' },
+  vehicleType: { type: String, default: 'BIKE' },
   vehicleNumber: String,
   rating: { type: Number, default: 0 },
   totalRating: { type: Number, default: 0 },
