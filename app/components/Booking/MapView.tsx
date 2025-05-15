@@ -86,56 +86,7 @@ useEffect(() => {
     }
   }, [onInitFromLocation]);
 
-  // 🟡 Fetch Route Between Two Points
-  useEffect(() => {
-    if (riderLocationsrc?.lat && riderLocationdst?.lat) {
-      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${riderLocationsrc.lon},${riderLocationsrc.lat};${riderLocationdst.lon},${riderLocationdst.lat}?overview=full&geometries=geojson`;
-
-      fetch(osrmUrl)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.routes.length > 0) {
-            const coords = data.routes[0].geometry.coordinates.map(([lon, lat]: [number , number]) => [lat, lon]);
-            setRoute(coords);
-            // Extract distance & duration
-            setDistance((data.routes[0].distance / 1000).toFixed(2) + ' km');
-            setDuration((data.routes[0].duration / 60).toFixed(2) + ' mins');   
-            console.log('distance',distance);
-            console.log('duration',duration);     
-          }
-        })
-        .catch((err) => console.error("Error fetching route:", err));
-    }
-  }, [riderLocationsrc,riderLocationdst]);
-
   
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (segmentedRoute.length > 0 && rideAccepted) {
-      interval = setInterval(() => {
-        setMovingMarkerIndex((prev) => {
-          if (prev >= segmentedRoute.length - 1) {
-            clearInterval(interval);
-            return prev;
-          }
-
-          const traffic = segmentedRoute[prev].traffic;
-          let delayFactor = 1;
-          if (traffic === 'medium') delayFactor = 1.5;
-          else if (traffic === 'high') delayFactor = 2;
-
-          const remaining = segmentedRoute.length - prev;
-          const estMinutes = (remaining * delayFactor * 0.5).toFixed(1); // Rough estimate
-          setSimulatedTimeLeft(`${estMinutes} min`);
-          return prev + 1;
-        });
-      }, 1000);
-    }
-
-    return () => clearInterval(interval);
-  }, [segmentedRoute,rideAccepted]);
-
   useEffect(() => {
     if (riderLocationsrc?.lat && fromLocation?.lat) {
       const osrmDriverUrl = `https://router.project-osrm.org/route/v1/driving/${fromLocation.lon},${fromLocation.lat};${riderLocationsrc.lon},${riderLocationsrc.lat}?overview=full&geometries=geojson`;
@@ -164,6 +115,60 @@ useEffect(() => {
         .catch((err) => console.error("Error fetching driver-to-source route:", err));
     }
   }, [riderLocationsrc, fromLocation]);
+
+  
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (segmentedRoute.length > 0 && rideAccepted) {
+      console.log("inside useeffect that generate moving marker")
+      setMovingMarkerIndex(0);
+      interval = setInterval(() => {
+        setMovingMarkerIndex((prev) => {
+          if (prev >= segmentedRoute.length - 1) {
+            clearInterval(interval);
+            return prev;
+          }
+
+          const traffic = segmentedRoute[prev].traffic;
+          let delayFactor = 1;
+          if (traffic === 'medium') delayFactor = 1.5;
+          else if (traffic === 'high') delayFactor = 2;
+
+          const remaining = segmentedRoute.length - prev;
+          const estMinutes = (remaining * delayFactor * 0.5).toFixed(1); // Rough estimate
+          setSimulatedTimeLeft(`${estMinutes} min`);
+          return prev + 1;
+        });
+      }, 1000);
+    }
+
+    return () => clearInterval(interval);
+  }, [segmentedRoute,rideAccepted]);
+  
+
+  // 🟡 Fetch Route Between Two Points
+  useEffect(() => {
+    if (riderLocationsrc?.lat && riderLocationdst?.lat) {
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${riderLocationsrc.lon},${riderLocationsrc.lat};${riderLocationdst.lon},${riderLocationdst.lat}?overview=full&geometries=geojson`;
+
+      fetch(osrmUrl)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.routes.length > 0) {
+            const coords = data.routes[0].geometry.coordinates.map(([lon, lat]: [number , number]) => [lat, lon]);
+            setRoute(coords);
+            // Extract distance & duration
+            setDistance((data.routes[0].distance / 1000).toFixed(2) + ' km');
+            setDuration((data.routes[0].duration / 60).toFixed(2) + ' mins');   
+            console.log('distance',distance);
+            console.log('duration',duration);     
+          }
+        })
+        .catch((err) => console.error("Error fetching route:", err));
+    }
+  }, [riderLocationsrc,riderLocationdst]);
+
   
   return (
     <MapContainer center={center as [number, number]} zoom={13} style={{ height: '100%', width: '100%' }}>
@@ -228,7 +233,7 @@ useEffect(() => {
       })}
 
       {/* Moving Marker */}
-      {segmentedRoute[movingMarkerIndex] && (
+      {rideAccepted && segmentedRoute[movingMarkerIndex] && (
         <Marker position={segmentedRoute[movingMarkerIndex].coords[0]}>
           <Popup>🚗 Moving... ETA: {simulatedTimeLeft}</Popup>
         </Marker>

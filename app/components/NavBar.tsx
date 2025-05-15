@@ -9,7 +9,7 @@ export default function NavBar() {
     <nav className="bg-gray-100 p-4 shadow-md flex items-center justify-start gap-6">
   <Link className="text-gray-700 font-medium rounded-md px-4 py-2 transition-all hover:bg-gray-200 hover:text-black" href="/">Home</Link>
   <Link className="text-gray-700 font-medium rounded-md px-4 py-2 transition-all hover:bg-gray-200 hover:text-black" href="/profile">Profile</Link>
-  <Link className="text-gray-700 font-medium rounded-md px-4 py-2 transition-all hover:bg-gray-200 hover:text-black" href="#">History</Link>
+  <Link className="text-gray-700 font-medium rounded-md px-4 py-2 transition-all hover:bg-gray-200 hover:text-black" href="/history">History</Link>
 </nav>
 
     </div>

@@ -11,6 +11,8 @@ import DriverInfo from './components/Booking/DriverInfo';
 import RatingView from './components/Booking/RatingView';
 import { useUser } from '@clerk/nextjs';
 import RiderInfo from './components/Booking/RiderInfo';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
  const [fromLocation, setFromLocation] = useState<{ lat: number | null; lon: number | null; name: string }>({
@@ -23,16 +25,15 @@ export default function Home() {
   const [messages, setMessages] = useState<string[]>([]);
   const [rideStarted, setRideStarted] = useState(false);
   const [input, setInput] = useState('');
-  const { user } = useUser()
+ 
+  const { user, isLoaded } = useUser();
   const [uiStep, setUiStep] = useState<'booking' | 'searching' | 'RiderInfo' | 'rideStarted' | 'paymentReceived' | 'rating'>('booking');
-  const [rideAccepted, setRideAccepted] = useState(false); // New state
+  const [rideAccepted, setRideAccepted] = useState<boolean>(false); // New state
  const [rating, setRating] = useState<number>(0);
 const [tripEnded,setTripEnded] = useState<boolean>(false);
 
 const [riderName, setRiderName] = useState('');
 const [fare, setFare] = useState(0);
-const D_name = user?.fullName ||'';
-const D_id = user?.id;
 
 
 const [riderLocationsrc, setRiderLocationSrc] = useState<{ lat: number | null; lon: number | null;name: string }>(
@@ -42,6 +43,20 @@ const [riderLocationsrc, setRiderLocationSrc] = useState<{ lat: number | null; l
 const [riderLocationdst, setRiderLocationDst] = useState<{ lat: number | null; lon: number | null; name: string}>(
   { lat: null, lon: null,name: '' }
 );
+
+
+  const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
+  const [profileComplete, setProfileComplete] = useState(false);
+const D_name = user?.fullName ||'';
+const D_id = user?.id;
+
+useEffect(() => {
+  if (rideAccepted) {
+    console.log("Updated rider accept",rideAccepted);
+  }
+
+}, [rideAccepted]);
 
 useEffect(() => {
   if (tripEnded) {
@@ -165,7 +180,7 @@ useEffect(() => {
             if (data.message === 'Your response (yes/no):') {
               console.log("Driver Info:", data.driverInfo);
               console.log("rider src" + riderLocationsrc.lat,riderLocationsrc.lon)
-              setRideAccepted(true)
+              
               setUiStep('RiderInfo'); // Show driver info UI
             }
         
@@ -200,6 +215,69 @@ useEffect(() => {
       client.deactivate();
     };
   }, []);
+
+
+  
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (!user || !isLoaded) return;
+      
+      setIsChecking(true);
+      try {
+        const res = await fetch(`/api/user/check?clerkId=${user.id}`);
+        const data = await res.json();
+
+        if (data.error) {
+          console.error(data.error);
+          return;
+        }
+
+        if (!data.profileExists || !data.walletExists) {
+          // Redirect to profile page if profile or wallet is missing
+          router.push('/profile');
+          return;
+        }
+
+        setProfileComplete(true);
+      } catch (error) {
+        console.error('Failed to check profile:', error);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkProfile();
+  }, [user, isLoaded, router]);
+
+  if (!isLoaded || isChecking) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-lg">Checking your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profileComplete) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center p-6 max-w-md bg-white rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Profile Incomplete</h2>
+          <p className="text-gray-600 mb-6">
+            Please complete your profile and set up your wallet to continue.
+          </p>
+          <Link
+            href="/profile"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+          >
+            Go to Profile
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleCreateTrip = () => {
     console.log("button is pressed")
@@ -248,7 +326,7 @@ useEffect(() => {
         {uiStep === 'searching' && <SearchingView />}
 
          {(uiStep === 'RiderInfo' || uiStep === 'rideStarted' || uiStep === 'paymentReceived' ) && (
-          <RiderInfo name={riderName} fare={fare} stompClient={stompClientRef.current} setUiStep={setUiStep} uiStep={uiStep} setRideAccepted={setRideAccepted} setTripEnded={setTripEnded}/>
+          <RiderInfo name={riderName} fare={fare} stompClient={stompClientRef.current} setUiStep={setUiStep} uiStep={uiStep} setRideAccepted={setRideAccepted} setTripEnded={setTripEnded} D_id={D_id}/>
         )}
 
         {uiStep === 'rating' && <RatingView />}
