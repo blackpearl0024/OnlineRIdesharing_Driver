@@ -43,6 +43,7 @@ const  clerkId = user?.id;
       try {
         const res = await fetch(`/api/history?clerkId=${clerkId}`)
         const data = await res.json()
+        console.log("asked for trips")
         if (res.ok) {
           setTrips(data.user) // users = array of trips
         } else {

@@ -1,7 +1,7 @@
-// models/Payment.ts
-import mongoose, {  Schema, model, Document,models  } from "mongoose";
+import mongoose, { Schema, model, Document, models } from "mongoose";
 
-interface IPayment extends Document {
+export  interface IPayment extends Document {
+  _id: mongoose.Types.ObjectId; // Explicitly include _id
   orderId?: string;
   paymentId?: string;
   amount: number;
@@ -43,4 +43,4 @@ const PaymentSchema = new Schema<IPayment>(
   { timestamps: true }
 );
 
-export default mongoose.models.Payment || mongoose.model<IPayment>('Payment', PaymentSchema);
+export default models.Payment || model<IPayment>('Payment', PaymentSchema);

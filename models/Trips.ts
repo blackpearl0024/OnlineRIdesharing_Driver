@@ -58,6 +58,8 @@ export interface ITrip extends Document {
   driverAccepted: boolean;
   riderEnded: boolean;
   driverEnded: boolean;
+  createdAt: Date; // Added this field
+  // updatedAt?: Date; // Optional if using timestamps
 }
 
 // Main schema
@@ -73,9 +75,14 @@ const TripSchema = new Schema<ITrip>({
   driverAccepted: { type: Boolean, required: true },
   riderEnded: { type: Boolean, required: true },
   driverEnded: { type: Boolean, required: true },
+  createdAt: { type: Date, default: Date.now } // Explicitly added
 }, {
-  timestamps: true // Optional: adds createdAt and updatedAt
+  timestamps: true // This will also add createdAt and updatedAt
 });
+
+// Add index for better query performance
+TripSchema.index({ createdAt: 1 });
+TripSchema.index({ tripId: 1 });
 
 // Export model
 export default mongoose.models.Trip || mongoose.model<ITrip>("Trip", TripSchema);

@@ -105,16 +105,18 @@ export default function RiderInfo({
   const onEndRide = () => {
     console.log("end button pressed");
     
-    if (paymentReceived) {
-      setUiStep('booking');
-    }
-    
+   
     if (stompClient && stompClient.connected) {
       stompClient.publish({
         destination: '/app/endTripDriver',
         body: JSON.stringify({}),
       });
       setTripEnded(true);
+      
+       if (paymentReceived) {
+      setUiStep('booking');
+    }
+    
     } else {
       console.warn('STOMP client not connected.');
     }
@@ -239,7 +241,7 @@ export default function RiderInfo({
 
       <button
         className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 shadow hover:shadow-md"
-        onClick={() => setUiStep('booking')}
+        onClick={() => setUiStep('rideStarted')}
       >
         <span className="flex items-center justify-center space-x-2">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

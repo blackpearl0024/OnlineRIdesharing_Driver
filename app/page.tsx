@@ -30,6 +30,7 @@ export default function Home() {
   const [uiStep, setUiStep] = useState<'booking' | 'searching' | 'RiderInfo' | 'rideStarted' | 'paymentReceived' | 'rating'>('booking');
   const [rideAccepted, setRideAccepted] = useState<boolean>(false); // New state
  const [rating, setRating] = useState<number>(0);
+  const [vehicleType, setVehicleType] = useState('');
 const [tripEnded,setTripEnded] = useState<boolean>(false);
 
 const [riderName, setRiderName] = useState('');
@@ -60,14 +61,18 @@ useEffect(() => {
 
 useEffect(() => {
   if (tripEnded) {
+    console.log("trip ended")
+     console.log("before setting driver src: ",fromLocation)
     setFromLocation({
       lat: riderLocationdst.lat,
       lon: riderLocationdst.lon,
       name: riderLocationdst.name || ''  // default to empty if undefined
     });
-
-    setFromLocation({ lat: null, lon: null, name: '' });
-    setToLocation({ lat: null, lon: null, name: '' });
+    console.log("after setting driver src: ",fromLocation)
+console.log("before riderscr " + riderLocationsrc)
+console.log("before riderscr " + riderLocationdst)
+    setRiderLocationSrc({ lat: null, lon: null, name: '' });
+    setRiderLocationDst({ lat: null, lon: null, name: '' });
   }
 }, [tripEnded]);
 
@@ -81,6 +86,7 @@ useEffect(() => {
       const data = await res.json();
       const driver = data.user;
       setRating(driver?.rating ?? 0);
+      setVehicleType(driver?.vehicleType);
     } catch (error) {
       console.error("Error fetching rating:", error);
     }
@@ -290,7 +296,9 @@ useEffect(() => {
       id:D_id ,
       fromlat: fromLocation.lat,
       fromlon: fromLocation.lon,
-      Rating:rating,
+  
+rating: rating,
+      vehiclepreference: vehicleType
  
     });
 

@@ -15,7 +15,7 @@ console.log(_id)
 
     await connectMongodb()
     console.log("db is connected")
-    const user = await Trips.find({ 'rider._id': _id }).sort({tripId: -1 })  // ✅ fixed line
+    const user = await Trips.find({ 'driver._id': _id }).sort({tripId: -1 })  // ✅ fixed line
 console.log("trying to insert")
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
