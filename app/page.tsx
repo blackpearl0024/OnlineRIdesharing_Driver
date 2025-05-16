@@ -131,7 +131,8 @@ useEffect(() => {
       reconnectDelay: 5000,
       onConnect: () => {
         console.log('STOMP Connected');
-
+//  const driverId = 'user_2vqZsPuWVtlY2ZN7hEs45t2aE8q'; // Get this from your auth/state
+            const driverChannel = `/topic/driver/${D_id}`;
         // Send rider identity or auth if needed
         // sendObj('/app/rider/init', { name: 'Imayavaramban', role: 'RIDER', id: 'R001' });
 
@@ -143,7 +144,7 @@ useEffect(() => {
         //   if (msg.includes('accepted')) setRideStarted(true);
         // });
 
-        client.subscribe('/topic/greetingsDriver', (message) => {
+        client.subscribe(driverChannel, (message) => {
         try {
             const data = JSON.parse(message.body);
             let infoText =null;
