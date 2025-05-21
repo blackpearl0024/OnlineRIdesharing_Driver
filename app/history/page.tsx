@@ -69,14 +69,14 @@ const  clerkId = user?.id;
     <div className="flex justify-between items-center mb-8">
       <h1 className="text-3xl font-bold text-gray-800">Your Trip History</h1>
       <div className="flex space-x-3">
-        <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center">
+        {/* <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center">
           <FilterIcon className="mr-2" />
           Filter
         </button>
         <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center">
           <DownloadIcon className="mr-2" />
           Export
-        </button>
+        </button> */}
       </div>
     </div>
 
@@ -155,10 +155,10 @@ const  clerkId = user?.id;
             </div>
 
             <div className="bg-gray-50 px-6 py-3 border-t flex justify-end">
-              <button className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center">
+              {/* <button className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center">
                 View Details
                 <ChevronRightIcon className="ml-1" />
-              </button>
+              </button> */}
             </div>
           </div>
         ))}

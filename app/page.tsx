@@ -59,24 +59,6 @@ useEffect(() => {
 
 }, [rideAccepted]);
 
-useEffect(() => {
-  if (tripEnded) {
-    console.log("trip ended")
-     console.log("before setting driver src: ",fromLocation)
-    setFromLocation({
-      lat: riderLocationdst.lat,
-      lon: riderLocationdst.lon,
-      name: riderLocationdst.name || ''  // default to empty if undefined
-    });
-    console.log("after setting driver src: ",fromLocation)
-console.log("before riderscr " + riderLocationsrc)
-console.log("before riderscr " + riderLocationdst)
-    setRiderLocationSrc({ lat: null, lon: null, name: '' });
-    setRiderLocationDst({ lat: null, lon: null, name: '' });
-  }
-}, [tripEnded]);
-
-
 
 useEffect(() => {
   async function fetchDriverRating() {
@@ -359,6 +341,8 @@ rating: rating,
             riderLocationdst={riderLocationdst}
             rideAccepted={rideAccepted}
             setRideAccepted={setRideAccepted}
+            tripEnded={tripEnded}
+            
             
           />
         </div>
