@@ -53,7 +53,8 @@ const [riderLocationdst, setRiderLocationDst] = useState<{ lat: number | null; l
   const [profileComplete, setProfileComplete] = useState(false);
 const D_name = user?.fullName ||'';
 const D_id = user?.id;
-
+console.log(" after initialise"+D_id);
+console.log(user?.id)
 useEffect(() => {
   if (rideAccepted) {
     console.log("Updated rider accept",rideAccepted);
@@ -110,6 +111,11 @@ useEffect(() => {
   }, [riderLocationsrc]);
   
   useEffect(() => {
+    
+      if (!user?.id) {
+    console.log('Waiting for user ID...');
+    return;
+  }
     const client = new StompJs.Client({
       brokerURL: 'ws://localhost:9090/gs-guide-websocket', // Same as your Spring endpoint
       reconnectDelay: 5000,
@@ -127,8 +133,8 @@ useEffect(() => {
         //   setMessages(prev => [...prev, msg]);
         //   if (msg.includes('accepted')) setRideStarted(true);
         // });
-
-        client.subscribe("/topic/driver/", (message) => {
+console.log("Driver channel"+driverChannel)
+        client.subscribe(driverChannel, (message) => {
   try {
     const data = JSON.parse(message.body);
     let infoText = null;
@@ -232,7 +238,7 @@ useEffect(() => {
     return () => {
       client.deactivate();
     };
-  }, []);
+  }, [user?.id]);
 
 
   
