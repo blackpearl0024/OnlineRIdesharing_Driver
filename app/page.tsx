@@ -21,6 +21,8 @@ export default function Home() {
   name: ''
 });
 
+const [riderStops, setRiderStops] = useState<Array<{lat: number, lon: number, name: string}>>([]);
+
   const [toLocation, setToLocation] = useState({ lat: null, lon: null, name: '' });
   const [messages, setMessages] = useState<string[]>([]);
   const [rideStarted, setRideStarted] = useState(false);
@@ -126,66 +128,93 @@ useEffect(() => {
         //   if (msg.includes('accepted')) setRideStarted(true);
         // });
 
-        client.subscribe(driverChannel, (message) => {
-        try {
-            const data = JSON.parse(message.body);
-            let infoText =null;
-            // Logging raw driver info
-            if (data.driverInfo) {
-              const infoText = data.driverInfo || '';
-              console.log("Driver Info:", infoText);
-            
-              const nameMatch = infoText.match(/Rider (.*?)(,|$)/);
-              const name_d = nameMatch?.[1] || 'Unknown';
-            console.log(name_d)
-              const fareMatch = infoText.match(/Fare: \$([0-9.]+)/);
-              const fare_t = parseFloat(fareMatch?.[1] || '0');
-              console.log(fare_t)
-              // Source location
-              const srcLoc = infoText.match(/Locationsrc: Latitude:\s*([0-9.]+),\s*Longitude:\s*([0-9.]+)/);
-              if (srcLoc) {
-                const lat = parseFloat(srcLoc[1]);
-                const lon = parseFloat(srcLoc[2]);
-                setRiderLocationSrc({ lat, lon,name: ''  });
-                console.log("Rider Src:", lat, lon);
-              }
+        client.subscribe("/topic/driver/", (message) => {
+  try {
+    const data = JSON.parse(message.body);
+    let infoText = null;
+    
+    if (data.driverInfo) {
+      const infoText = data.driverInfo || '';
+      console.log("Driver Info:", infoText);
+    
+      const nameMatch = infoText.match(/Rider (.*?)(,|$)/);
+      const name_d = nameMatch?.[1] || 'Unknown';
+      console.log(name_d);
+      
+      const fareMatch = infoText.match(/Fare: \$([0-9.]+)/);
+      const fare_t = parseFloat(fareMatch?.[1] || '0');
+      console.log(fare_t);
+      
+      // Source location
+      const srcLoc = infoText.match(/From: Latitude:\s*([0-9.-]+),\s*Longitude:\s*([0-9.-]+)/);
+      if (srcLoc) {
+        const lat = parseFloat(srcLoc[1]);
+        const lon = parseFloat(srcLoc[2]);
+        setRiderLocationSrc({ lat, lon, name: 'Pickup Location' });
+        console.log("Rider Src:", lat, lon);
+      }
 
-              // ✅ FIXED: Destination location regex
-              const dstLoc = infoText.match(/Locationdst: Latitude:\s*([0-9.]+),\s*Longitude:\s*([0-9.]+)/);
-              if (dstLoc) {
-                const lat = parseFloat(dstLoc[1]);
-                const lon = parseFloat(dstLoc[2]);
-                setRiderLocationDst({ lat, lon,name: ''  });
-                console.log("Rider Dst:", lat, lon);
-              }
-                          
-            
-              setRiderName(name_d);
-              setFare(fare_t);
-            }
-            
+      // Destination location  
+      const dstLoc = infoText.match(/To: Latitude:\s*([0-9.-]+),\s*Longitude:\s*([0-9.-]+)/);
+      if (dstLoc) {
+        const lat = parseFloat(dstLoc[1]);
+        const lon = parseFloat(dstLoc[2]);
+        setRiderLocationDst({ lat, lon, name: 'Destination' });
+        console.log("Rider Dst:", lat, lon);
+      }
+
+      // ✅ NEW: Extract stops information
+      const stopsSection = infoText.match(/Stops: (.*?)(?:, Fare:|$)/);
+      if (stopsSection) {
+        const stopsText = stopsSection[1];
+        console.log("Stops text:", stopsText);
         
-            // When ride has started
-            if (data.message === 'Your response (yes/no):') {
-              console.log("Driver Info:", data.driverInfo);
-              console.log("rider src" + riderLocationsrc.lat,riderLocationsrc.lon)
-              
-              setUiStep('RiderInfo'); // Show driver info UI
-            }
+        // Parse individual stops: "Villianur (Latitude: 11.9132643, Longitude: 79.7550761)"
+        const stopMatches = stopsText.match(/([^(]+)\s*\(Latitude:\s*([0-9.-]+),\s*Longitude:\s*([0-9.-]+)\)/g);
         
-            // Log any other messages
-            if (data.message) {
-              console.log("Message:", data.message);
-              if(data.message ==='Ride ended' )
-              {
-                setUiStep('rating');
-              }
+        if (stopMatches) {
+          const parsedStops = stopMatches.map((stopMatch: string, index: number) => {
+            const match = stopMatch.match(/([^(]+)\s*\(Latitude:\s*([0-9.-]+),\s*Longitude:\s*([0-9.-]+)\)/);
+            if (match) {
+              return {
+                lat: parseFloat(match[2]),
+                lon: parseFloat(match[3]),
+                name: match[1].trim()
+              };
             }
-        
-          } catch (error) {
-            console.error("Failed to parse message:", error);
-          }
-        });
+            return null;
+          }).filter(Boolean);
+          
+          setRiderStops(parsedStops as Array<{lat: number, lon: number, name: string}>);
+          console.log("Parsed stops:", parsedStops);
+        }
+      } else {
+        // No stops found, clear the stops array
+        setRiderStops([]);
+      }
+      
+      setRiderName(name_d);
+      setFare(fare_t);
+    }
+    
+    // When ride has started
+    if (data.message === 'Your response (yes/no):') {
+      console.log("Driver Info:", data.driverInfo);
+      console.log("rider src", riderLocationsrc.lat, riderLocationsrc.lon);
+      setUiStep('RiderInfo');
+    }
+
+    if (data.message) {
+      console.log("Message:", data.message);
+      if (data.message === 'Ride ended') {
+        setUiStep('rating');
+      }
+    }
+
+  } catch (error) {
+    console.error("Failed to parse message:", error);
+  }
+});
         
         
       },
@@ -333,19 +362,19 @@ rating: rating,
         </div>
 
         <div className="col-span-2 bg-red-100 order-first md:order-last text-black">
-          <MapView
-            fromLocation={fromLocation}
-            onFromDrag={setFromLocation}
-            onInitFromLocation={setFromLocation}
-            riderLocationsrc={riderLocationsrc}
-            riderLocationdst={riderLocationdst}
-            rideAccepted={rideAccepted}
-            setRideAccepted={setRideAccepted}
-            tripEnded={tripEnded}
-            
-            
-          />
-        </div>
+        <MapView
+          fromLocation={fromLocation}
+          onFromDrag={setFromLocation}
+          onInitFromLocation={setFromLocation}
+          riderLocationsrc={riderLocationsrc}
+          riderLocationdst={riderLocationdst}
+          riderStops={riderStops}  // ✅ NEW: Pass stops to MapView
+          rideAccepted={rideAccepted}
+          setRideAccepted={setRideAccepted}
+          tripEnded={tripEnded}
+        />
+      </div>
+
       </div>
     </div>
   );
